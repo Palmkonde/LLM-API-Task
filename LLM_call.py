@@ -17,8 +17,10 @@ class GraphPloter:
             {
                 "role": "user",
                 "content": (
-                    f"Extract the function name and interval from the following text. "
-                    f"Respond in the format: 'function_name,x_min,x_max'. If the user wants to exit, respond with 'exit'.\n"
+                    "Extract the function name and interval from the following text. "
+                    "Respond in the format: 'function_name, [coeffician1, coeffician2, coeiffician3,... ], x_min, x_max'. If the user wants to exit, respond with 'exit'.\n"
+                    "For example: user_input: 3x^3 + 2x^2 + 2x + 1 (-10, 10) respond: poly, [3, 2, 2, 1], -10, 10"
+                    "Another example: user_input: sin(2x) (-2, 5) respond: sin, [2], -2, 5"
                     f"Input: {user_input}"
                 )
             }
@@ -30,16 +32,17 @@ class GraphPloter:
         )
 
         return chat_response.choices[0].message.content.strip()
-    def plot_function(self, function_name: str, x_min: int | float, x_max: int | float) -> None:
+    def plot_function(self, function_name: str, coefficients: list[int | float], x_min: int | float, x_max: int | float) -> None:
         x = np.linspace(x_min, x_max, 500)
+
         if function_name == "sin":
-            y = np.sin(x)
+            k = coefficients[0]  
+            y = np.sin(k * x)
         elif function_name == "cos":
-            y = np.cos(x)
-        elif function_name == "x":
-            y = x
-        elif function_name == "x^2":
-            y = x**2
+            k = coefficients[0]
+            y = np.cos(k * x)
+        elif function_name == "poly":
+            y = np.polyval(coefficients, x)
         else:
             print("Unsupported function.")
             return
@@ -65,10 +68,23 @@ class GraphPloter:
                 print("Goodbye!")
             else:
                 try:
-                    function_name, x_min, x_max = response.split(",")
-                    self.plot_function(function_name, float(x_min), float(x_max))
-                except ValueError:
-                    print("Sorry, I couldn't understand your input. Please try again.")
+                    parts = response.split(",")
+                    function_name = parts[0].strip()
+
+                    coefficients_str = parts[1].strip()
+                    coefficients = eval(coefficients_str) 
+
+                    x_min = float(parts[2].strip())
+                    x_max = float(parts[3].strip())
+
+                    self.plot_function(function_name, coefficients, x_min, x_max)
+
+                except ValueError as e:
+                    print(f"Sorry, I couldn't understand your input. Please try again. Error: {e}")
+                except IndexError:
+                    print("The input format is incorrect. Please follow the format 'function_name, [coefficients], x_min, x_max'.")
+                except SyntaxError:
+                    print("There seems to be a syntax issue with the coefficients. Make sure they are in list format.")
 
 if __name__ == "__main__":
     api_key = os.environ["MISTRAL_API_KEY"]
