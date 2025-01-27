@@ -46,6 +46,7 @@ class GraphPloter:
         else:
             print("Unsupported function.")
             return
+        
 
         plt.plot(x, y)
         plt.title(f"{function_name} on [{x_min}, {x_max}]")
@@ -62,7 +63,7 @@ class GraphPloter:
                 print("Goodbye!")
                 continue
 
-            response = self.ask_mistral(user_input)
+            response = self.ask_mistrial(user_input)
             if response.lower() == "exit":
                 self.running = False
                 print("Goodbye!")
@@ -71,11 +72,32 @@ class GraphPloter:
                     parts = response.split(",")
                     function_name = parts[0].strip()
 
-                    coefficients_str = parts[1].strip()
-                    coefficients = eval(coefficients_str) 
+                    flag = False 
+                    coefficients_str = ""
+                    nxt = -1
+                    for i, e in enumerate(parts):
+                        if "[" in e and "]" in e:
+                            coefficients_str = e.strip()
+                            nxt = i + 1
+                            break
 
-                    x_min = float(parts[2].strip())
-                    x_max = float(parts[3].strip())
+                        if "[" in parts[i]:
+                            coefficients_str += e.lstrip() + ','
+                            flag = True
+                        
+                        elif "]" in parts[i]:
+                            coefficients_str += e.strip()
+                            nxt = i + 1
+                            break
+
+                        elif flag:
+                            coefficients_str += e.rstrip() + ','
+                        
+                    coefficients = eval(coefficients_str) 
+                    # coefficients = coefficients[0]
+                    
+                    x_min = float(parts[nxt].strip())
+                    x_max = float(parts[nxt + 1].strip())
 
                     self.plot_function(function_name, coefficients, x_min, x_max)
 
